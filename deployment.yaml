@@ -1,0 +1,53 @@
+# 外部访问服务
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: kube-ops
+  name: sentinel
+  labels:
+    app: sentinel
+spec:
+  ports:
+    - protocol: TCP
+      name: http
+      port: 8080
+      targetPort: 8080
+      nodePort: 30007
+  type: NodePort
+  selector:
+    app: sentinel
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sentinel
+  namespace: kube-ops
+spec:
+  serviceName: sentinel
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sentinel
+      annotations:
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      containers:
+        - name: sentinel
+          imagePullPolicy: Always
+          image: $image
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+          ports:
+            - containerPort: 8080
+              name: client
+          env:
+            - name: TZ
+              value: Asia/Shanghai
+            - name: JAVA_OPTS
+              value: "-Dserver.port=8080 -Dcsp.sentinel.dashboard.server=localhost:8080 -Dsentinel.dashboard.auth.username=sentinel -Dsentinel.dashboard.auth.password=sentinel -Dserver.servlet.session.timeout=7200"
+  selector:
+    matchLabels:
+      app: sentinel

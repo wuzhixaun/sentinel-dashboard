@@ -44,6 +44,16 @@ podTemplate(label: label, containers: [
           }
       }
     }
+
+        stage('部署到k8s') {
+          container('kubectl') {
+            echo "部署到k8s集群"
+            sh """
+              sed -i 's#\$image#${image}#' deployment.yaml
+              """
+            kubernetesDeploy(enableConfigSubstitution: false, kubeconfigId: 'kubeconfig1', configs: 'deployment.yaml')
+          }
+        }
     
 
   }
